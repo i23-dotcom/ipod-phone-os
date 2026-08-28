@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>iPod Audio & Media Suite Ultimate</title>
+  
+  <!-- HLS.js for VOD / IPTV streams -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+  <style>
+    :root {
+      --bg-color: #05070a;
+      --lcd-bg: #9ab38a;
+      --lcd-border: #232d20;
+      --lcd-text: #1d2b1c;
+      --lcd-highlight: #232d20;
+      --lcd-highlight-text: #9ab38a;
+      --lcd-bar-bg: rgba(0,0,0,0.15);
+      --lcd-accent: #2e422a;
+      --lcd-font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+      --wheel-glow-color: rgba(99, 102, 241, 0.45);
+      --wheel-spark-color: #38bdf8;
+    }
+
+    /* THEMES */
+    body.theme-lcd-blue { --lcd-bg: #8baec4; --lcd-border: #1a2a36; --lcd-text: #0e1e2a; --lcd-highlight: #1a2a36; --lcd-highlight-text: #8baec4; --lcd-accent: #2c4a5e; }
+    body.theme-lcd-amber { --lcd-bg: #cbb47e; --lcd-border: #382c12; --lcd-text: #281d06; --lcd-highlight: #382c12; --lcd-highlight-text: #cbb47e; --lcd-accent: #5e481e; }
+    body.theme-lcd-mono { --lcd-bg: #b5c2b1; --lcd-border: #2b3329; --lcd-text: #141c12; --lcd-highlight: #2b3329; --lcd-highlight-text: #b5c2b1; --lcd-accent: #3d4a3b; }
+    body.theme-lcd-dark { --lcd-bg: #111610; --lcd-border: #4a5d48; --lcd-text: #9bcc93; --lcd-highlight: #9bcc93; --lcd-highlight-text: #111610; --lcd-accent: #78ab70; }
+    body.theme-lcd-synth { --lcd-bg: #22122e; --lcd-border: #d946ef; --lcd-text: #f472b6; --lcd-highlight: #d946ef; --lcd-highlight-text: #22122e; --lcd-accent: #38bdf8; }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--lcd-font-family); -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      width: 100%; height: 100%; height: 100dvh; overflow: hidden;
+      background: var(--bg-color); display: flex; align-items: center; justify-content: center; touch-action: none;
+    }
+
+    .ipod-stage {
+      width: 100vw; height: 100dvh; max-width: 460px;
+      display: flex; align-items: center; justify-content: center;
+      padding: env(safe-area-inset-top, 6px) 10px env(safe-area-inset-bottom, 10px) 10px;
+    }
+
+    .ipod-body {
+      width: 100%; height: 100%;
+      background: linear-gradient(165deg, #ffffff 0%, #f4f5f7 45%, #e2e8f0 100%);
+      border-radius: min(44px, 10vw);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75), inset 0 2px 5px rgba(255, 255, 255, 1), inset 0 -5px 10px rgba(0, 0, 0, 0.15);
+      padding: max(14px, 1.8vh) 18px max(18px, 2.5vh) 18px;
+      display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+      border: 1px solid #d1d5db; position: relative; user-select: none;
+      transition: background 0.4s ease, border-color 0.4s ease;
+    }
+
+    .ipod-body::before {
+      content: ''; position: absolute; top: 2px; left: 2px; right: 2px; bottom: 2px;
+      border-radius: min(42px, 9.8vw); border: 1px solid rgba(255, 255, 255, 0.85); pointer-events: none;
+    }
+
+    /* CASING SKINS */
+    .ipod-body.casing-white { background: linear-gradient(165deg, #ffffff 0%, #f4f5f7 45%, #e2e8f0 100%); border-color: #d1d5db; }
+    .ipod-body.casing-white .click-wheel { background: linear-gradient(145deg, #ffffff, #f1f5f9); border-color: #e2e8f0; }
+    .ipod-body.casing-white .wheel-btn { color: #526075; }
+    .ipod-body.casing-white .center-button { background: linear-gradient(145deg, #ffffff, #e2e8f0); border-color: #cbd5e1; }
+
+    .ipod-body.casing-black { background: linear-gradient(165deg, #27272a 0%, #18181b 50%, #09090b 100%); border-color: #3f3f46; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.95); }
+    .ipod-body.casing-black .click-wheel { background: linear-gradient(145deg, #18181b, #09090b); border-color: #27272a; }
+    .ipod-body.casing-black .wheel-btn { color: #a1a1aa; }
+    .ipod-body.casing-black .center-button { background: linear-gradient(145deg, #dc2626, #991b1b); border-color: #7f1d1d; }
+
+    .ipod-body.casing-titanium { background: linear-gradient(165deg, #64748b 0%, #334155 50%, #1e293b 100%); border-color: #475569; }
+    .ipod-body.casing-titanium .click-wheel { background: linear-gradient(145deg, #334155, #1e293b); border-color: #475569; }
+    .ipod-body.casing-titanium .wheel-btn { color: #38bdf8; }
+    .ipod-body.casing-titanium .center-button { background: linear-gradient(145deg, #0284c7, #0369a1); border-color: #0c4a6e; }
+
+    .ipod-body.casing-atomic { background: linear-gradient(165deg, rgba(168, 85, 247, 0.75) 0%, rgba(126, 34, 206, 0.85) 50%, rgba(88, 28, 135, 0.95) 100%); backdrop-filter: blur(12px); border-color: rgba(192, 132, 252, 0.5); }
+    .ipod-body.casing-atomic .click-wheel { background: rgba(255, 255, 255, 0.15); border-color: rgba(255, 255, 255, 0.3); }
+    .ipod-body.casing-atomic .wheel-btn { color: #ffffff; }
+    .ipod-body.casing-atomic .center-button { background: rgba(255, 255, 255, 0.3); border-color: rgba(255, 255, 255, 0.5); }
+
+    /* LCD SCREEN BEZEL */
+    .ipod-bezel {
+      width: 100%; height: min(280px, 40vh); flex-shrink: 0; background: #1d252e;
+      border-radius: 18px; padding: 9px; box-shadow: inset 0 3px 10px rgba(0,0,0,0.85), 0 2px 5px rgba(255,255,255,0.7);
+      display: flex; flex-direction: column; position: relative;
+    }
+
+    .ipod-screen {
+      width: 100%; height: 100%; background: var(--lcd-bg); background-size: cover; background-position: center;
+      border-radius: 8px; padding: 10px 14px; box-shadow: inset 0 0 16px rgba(0,0,0,0.28); color: var(--lcd-text);
+      display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden;
+    }
+
+    .lcd-wallpaper-tint { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 1; display: none; pointer-events: none; }
+    .ipod-screen.has-wallpaper .lcd-wallpaper-tint { display: block; }
+
+    .ipod-screen::after {
+      content: " "; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.04) 50%);
+      background-size: 100% 4px; pointer-events: none; z-index: 10;
+    }
+
+    .ipod-screen-header {
+      display: flex; justify-content: space-between; align-items: center; font-weight: 800;
+      border-bottom: 2px solid var(--lcd-border); padding-bottom: 4px; font-size: 0.95rem; z-index: 2;
+    }
+    .header-left { display: flex; align-items: center; gap: 6px; }
+    .options-trigger { background: none; border: none; color: inherit; font-size: 1.3rem; font-weight: bold; cursor: pointer; padding: 0 4px; border-radius: 4px; }
+    .options-trigger:active { background: rgba(0,0,0,0.15); }
+
+    .ipod-screen-body { text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; flex: 1; padding: 4px 0; z-index: 2; position: relative; }
+    .ipod-title { font-size: clamp(1.2rem, 5vw, 1.55rem); font-weight: 800; margin-bottom: 4px; text-transform: uppercase; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+    .ipod-sub { font-size: clamp(1.3rem, 5.5vw, 1.7rem); font-weight: 900; text-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+    
+    .ipod-screen-footer { font-size: 0.78rem; text-align: center; font-weight: 800; letter-spacing: 0.8px; opacity: 0.85; text-transform: uppercase; z-index: 2; display: flex; justify-content: space-between; width: 100%; }
+
+    /* Interactive Progress Bar & Times */
+    .ipod-progress-wrapper { width: 100%; display: flex; flex-direction: column; align-items: center; margin-top: 8px; z-index: 3; }
+    .ipod-times { display: flex; justify-content: space-between; width: 100%; font-size: 0.75rem; font-weight: 800; margin-bottom: 2px; }
+    .ipod-progress-container { width: 100%; height: 12px; background: var(--lcd-bar-bg); border: 1.5px solid var(--lcd-border); border-radius: 6px; overflow: hidden; cursor: pointer; position: relative; }
+    .ipod-progress-fill { height: 100%; width: 0%; background: var(--lcd-border); pointer-events: none; }
+    .ipod-progress-scrubber { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 4; touch-action: none; }
+
+    /* Visualizer & Game Canvas */
+    .ipod-visualizer-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; opacity: 0.9; }
+
+    /* Viewports */
+    .ipod-video-viewport { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background:#000; display:none; z-index:8; overflow:hidden; }
+    .ipod-video-viewport video { width:100%; height:100%; object-fit:contain; background:#000; pointer-events:auto; }
+    .ipod-video-status { position:absolute; inset:0; z-index:2; display:flex; align-items:center; justify-content:center; padding:18px; box-sizing:border-box; text-align:center; color:#fff; background:rgba(0,0,0,.78); font:700 13px/1.45 monospace; pointer-events:none; }
+    .ipod-video-status.hidden { display:none; }
+    .ipod-video-status .box { max-width:90%; padding:14px 16px; border:1px solid rgba(255,255,255,.28); border-radius:10px; background:rgba(20,20,20,.88); }
+    
+    .ipod-iframe-viewport { position: absolute; top: 32px; left: 0; right: 0; bottom: 0; background: #000; z-index: 9; display: none; }
+    .ipod-iframe-viewport.active { display: block; }
+    .ipod-iframe-viewport iframe { width: 100%; height: 100%; border: none; }
+
+    .ipod-browser-viewport { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: var(--lcd-bg); color: var(--lcd-text); z-index: 12; display: none; flex-direction: column; overflow: hidden; }
+    .ipod-browser-viewport.active { display: flex; }
+    .browser-header { background: var(--lcd-border); color: var(--lcd-bg); padding: 3px 6px; font-size: 0.85rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; border-bottom: 2px solid var(--lcd-bg); }
+    .browser-content { flex: 1; overflow-y: auto; padding: 8px; font-size: 0.85rem; line-height: 1.4; pointer-events: auto; word-wrap: break-word; }
+    .browser-content img { max-width: 100% !important; height: auto !important; display: block; margin: 4px 0; border-radius: 4px; }
+    .browser-link-focus { background: var(--lcd-border) !important; color: var(--lcd-bg) !important; outline: 2px solid var(--lcd-border); border-radius: 2px; padding: 0 3px; text-decoration: none !important; }
+
+    /* Volume HUD Overlay */
+    .volume-hud { position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); width: 80%; background: rgba(255,255,255,0.85); color: #000; padding: 6px 12px; border-radius: 12px; border: 2px solid #000; z-index: 50; display: flex; align-items: center; gap: 8px; opacity: 0; transition: opacity 0.2s; pointer-events: none; font-weight: 900; font-size: 0.8rem; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+    .volume-hud.show { opacity: 1; }
+    .volume-bar { flex: 1; height: 8px; background: #ccc; border-radius: 4px; border: 1px solid #333; overflow: hidden; }
+    .volume-fill { width: 50%; height: 100%; background: #000; }
+
+    /* Utility & Generic Overlays */
+    .ipod-menu-overlay, .generic-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: var(--lcd-bg); z-index: 20; display: none; flex-direction: column; color: var(--lcd-text); }
+    .ipod-menu-overlay.active, .generic-overlay.active { display: flex; }
+    .ipod-menu-header { background: var(--lcd-border); color: var(--lcd-bg); padding: 7px 12px; font-size: 0.92rem; font-weight: 800; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+    .ipod-menu-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex: 1; touch-action: pan-y; }
+    .ipod-menu-item { padding: 9px 12px; font-size: 0.88rem; font-weight: 700; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-bottom: 1px rgba(0,0,0,0.08) solid; }
+    .ipod-menu-item:hover, .ipod-menu-item.selected { background: var(--lcd-highlight); color: var(--lcd-highlight-text); }
+
+    /* Click Wheel */
+    .click-wheel-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; padding: max(10px, 1.5vh) 0; }
+    .click-wheel { width: min(250px, 45vh, 72vw); height: min(250px, 45vh, 72vw); border-radius: 50%; box-shadow: 0 10px 25px rgba(0,0,0,0.18), inset 0 0 2px rgba(0,0,0,0.2), inset 0 -3px 6px rgba(0,0,0,0.08); position: relative; display: flex; align-items: center; justify-content: center; user-select: none; touch-action: none; border: 1px solid #e2e8f0; overflow: hidden; }
+    .wheel-btn { position: absolute; background: none; border: none; font-weight: 800; cursor: pointer; font-size: min(0.95rem, 4vw); letter-spacing: 0.5px; z-index: 2; padding: 10px; }
+    .wheel-top { top: 12px; font-size: 0.82rem; } .wheel-bottom { bottom: 12px; font-size: 0.9rem; } .wheel-left { left: 14px; font-size: 1.05rem; } .wheel-right { right: 14px; font-size: 1.05rem; }
+    
+    .center-button { width: min(88px, 15vh, 25vw); height: min(88px, 15vh, 25vw); border-radius: 50%; box-shadow: 0 3px 6px rgba(0,0,0,0.12), inset 0 1px 2px rgba(255,255,255,0.95); cursor: pointer; z-index: 3; position: relative; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+    .wheel-glow { position: absolute; width: 100%; height: 100%; border-radius: 50%; pointer-events: none; box-shadow: 0 0 0 0 var(--wheel-glow-color); transition: box-shadow 0.3s ease; }
+    .wheel-glow.active { box-shadow: 0 0 25px 6px var(--wheel-glow-color); }
+    .wheel-spark-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 4; }
+
+    /* Animations */
+    @keyframes buttonPushDown { 0% { transform: scale(1); } 50% { transform: scale(0.88) translateY(2px); } 100% { transform: scale(1); } }
+    @keyframes centerPushDown { 0% { transform: scale(1); box-shadow: 0 3px 6px rgba(0,0,0,0.12); } 50% { transform: scale(0.92); box-shadow: inset 0 3px 6px rgba(0,0,0,0.3); } 100% { transform: scale(1); box-shadow: 0 3px 6px rgba(0,0,0,0.12); } }
+    .wheel-btn.pressed { animation: buttonPushDown 0.2s cubic-bezier(0.4, 0, 0.2, 1); opacity: 0.7; }
+    .center-button.pressed { animation: centerPushDown 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+    .center-button.inner-wheel-pulse { animation: innerPulseAnim 1.2s infinite ease-in-out; }
+    .center-button.inner-wheel-neon { box-shadow: 0 0 15px var(--wheel-spark-color), inset 0 0 8px var(--wheel-spark-color); }
+    @keyframes innerPulseAnim { 0%, 100% { transform: scale(1); box-shadow: 0 0 5px rgba(255,255,255,0.5); } 50% { transform: scale(1.06); box-shadow: 0 0 20px var(--wheel-glow-color); } }
+
+    /* Clock & Stopwatch */
+    .utility-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; text-align: center; }
+    .stopwatch-time { font-size: 2.2rem; font-weight: 900; letter-spacing: 2px; }
+    .stopwatch-laps { width: 100%; flex: 1; overflow-y: auto; text-align: left; font-size: 0.8rem; margin-top: 10px; border-top: 2px solid var(--lcd-border); padding-top: 5px; }
+    .clock-time { font-size: 2.5rem; font-weight: 900; }
+    .clock-date { font-size: 1rem; font-weight: 700; margin-top: -5px; }
+
+    /* Prompts & Power Off */
+    .ipod-prompt-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: var(--lcd-bg); z-index: 40; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 15px; }
+    .ipod-prompt-overlay.active { display: flex; }
+    .prompt-input { width: 100%; padding: 8px; margin: 12px 0; border: 2px solid var(--lcd-border); border-radius: 4px; background: rgba(255,255,255,0.7); outline: none; }
+    .prompt-btns { display: flex; gap: 10px; width: 100%; }
+    .prompt-btn { flex: 1; padding: 8px; background: var(--lcd-border); color: var(--lcd-bg); border: none; border-radius: 4px; font-weight: 800; }
+    .ipod-off-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #0b1009; z-index: 60; display: none; flex-direction: column; align-items: center; justify-content: center; color: rgba(255,255,255,0.2); }
+    .ipod-off-overlay.active { display: flex; }
+
+    input[type="file"] { display: none; }
+  </style>
+</head>
+<body class="theme-lcd-olive">
+
+<div class="ipod-stage">
+  <div class="ipod-body casing-white" id="ipod-hardware-body">
+    
+    <div class="ipod-bezel">
+      <div class="ipod-screen" id="ipod-screen-element">
+        <div class="lcd-wallpaper-tint"></div>
+        
+        <div class="ipod-screen-header">
+          <div class="header-left">
+            <button class="options-trigger" title="Menu" onclick="toggleIpodMenu(event)">⋮</button>
+            <span id="ipod-mode-tag">iPod OS</span>
+          </div>
+          <span id="ipod-status-tag">READY</span>
+        </div>
+
+        <div class="ipod-screen-body">
+          <canvas id="visualizer-canvas" class="ipod-visualizer-canvas"></canvas>
+          <div id="ipod-title-text" class="ipod-title">ULTIMATE SUITE</div>
+          <div id="ipod-sub-text" class="ipod-sub">PRO EDITION</div>
+          
+          <div class="ipod-progress-wrapper" id="progress-wrapper">
+            <div class="ipod-times">
+              <span id="time-current">0:00</span>
+              <span id="time-total">0:00</span>
+            </div>
+            <div class="ipod-progress-container">
+              <div class="ipod-progress-fill" id="progress-fill"></div>
+              <div class="ipod-progress-scrubber" id="progress-scrubber"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ipod-screen-footer">
+          <span id="footer-left" style="width:33%; text-align:left;"></span>
+          <span id="ipod-footer-text" style="width:34%; text-align:center;">APPLE IPOD</span>
+          <span id="footer-right" style="width:33%; text-align:right;"></span>
+        </div>
+
+        <!-- Volume HUD -->
+        <div class="volume-hud" id="volume-hud">
+          <span>🔈</span>
+          <div class="volume-bar"><div class="volume-fill" id="volume-fill"></div></div>
+        </div>
+
+        <div class="ipod-video-viewport" id="video-viewport">
+          <video id="main-video" playsinline webkit-playsinline preload="metadata"></video>
+          <div class="ipod-video-status" id="video-status"><div class="box">VIDEO / IPTV</div></div>
+        </div>
+
+        <div class="ipod-iframe-viewport" id="iframe-viewport">
+          <iframe id="main-iframe" referrerpolicy="strict-origin-when-cross-origin" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
+        </div>
+
+        <div class="ipod-browser-viewport" id="browser-viewport">
+          <div class="browser-header" id="browser-title">Web Browser</div>
+          <div class="browser-content" id="browser-content"></div>
+          <div class="browser-loading" id="browser-loading">DIALING...</div>
+        </div>
+
+        <!-- MENUS -->
+        <div class="ipod-menu-overlay" id="ipod-menu">
+          <div class="ipod-menu-header"><span>iPod Main Menu</span><span onclick="closeOverlay('ipod-menu')">✕</span></div>
+          <ul class="ipod-menu-list">
+            <li class="ipod-menu-item" onclick="selectMenuOption('audio')">🎵 Music Player</li>
+            <li class="ipod-menu-item" onclick="selectMenuOption('fm')">📻 FM Radio</li>
+            <li class="ipod-menu-item" onclick="selectMenuOption('video')">🎬 Video & IPTV</li>
+            <li class="ipod-menu-item" onclick="openMenu('playback-menu')">🎛️ Playback & EQ</li>
+            <li class="ipod-menu-item" onclick="openMenu('games-menu')">🎮 Games & Extras</li>
+            <li class="ipod-menu-item" onclick="openMenu('surf-menu')">🌐 Web Browsing</li>
+            <li class="ipod-menu-item" onclick="openMenu('master-library-menu')">📂 Media Library</li>
+            <li class="ipod-menu-item" onclick="openMenu('settings-menu')">⚙️ Settings</li>
+            <li class="ipod-menu-item" style="color: #ef4444;" onclick="powerOffDevice()">🔴 Sleep / Power Off</li>
+          </ul>
+        </div>
+
+        <div class="ipod-menu-overlay" id="playback-menu">
+          <div class="ipod-menu-header"><span>🎛️ Playback & EQ</span><span onclick="closeOverlay('playback-menu')">✕</span></div>
+          <ul class="ipod-menu-list">
+            <li class="ipod-menu-item" onclick="cycleShuffle()">🔀 Shuffle: <span id="lbl-shuffle">Off</span></li>
+            <li class="ipod-menu-item" onclick="cycleRepeat()">🔁 Repeat: <span id="lbl-repeat">Off</span></li>
+            <li class="ipod-menu-item" onclick="cycleSpeed()">⏩ Play Speed: <span id="lbl-speed">1.0x</span></li>
+            <li class="ipod-menu-item" onclick="cycleSleepTimer()">🌙 Sleep Timer: <span id="lbl-sleep">Off</span></li>
+            <li class="ipod-menu-item" onclick="openMenu('eq-menu')">🎚️ 5-Band Equalizer: <span id="lbl-eq">Flat</span></li>
+          </ul>
+        </div>
+
+        <div class="ipod-menu-overlay" id="eq-menu">
+          <div class="ipod-menu-header"><span>🎚️ Equalizer Presets</span><span onclick="closeOverlay('eq-menu')">✕</span></div>
+          <ul class="ipod-menu-list">
+            <li class="ipod-menu-item" onclick="setEQ('Flat')">Flat (Bypass)</li>
+            <li class="ipod-menu-item" onclick="setEQ('Bass Boost')">Bass Boost</li>
+            <li class="ipod-menu-item" onclick="setEQ('Treble Boost')">Treble Boost</li>
+            <li class="ipod-menu-item" onclick="setEQ('Rock')">Rock</li>
+            <li class="ipod-menu-item" onclick="setEQ('Pop')">Pop</li>
+            <li class="ipod-menu-item" onclick="setEQ('Jazz')">Jazz</li>
+            <li class="ipod-menu-item" onclick="setEQ('Vocal')">Vocal / Spoken Word</li>
+            <li class="ipod-menu-item" onclick="setEQ('Electronic')">Electronic</li>
+          </ul>
+        </div>
+
+        <div class="ipod-menu-overlay" id="games-menu">
+          <div class="ipod-menu-header"><span>🎮 Games & Utilities</span><span onclick="closeOverlay('games-menu')">✕</span></div>
+          <ul class="ipod-menu-list">
+            <li class="ipod-menu-item" onclick="startGame('snake')">🐍 iPod Snake</li>
+            <li class="ipod-menu-item" onclick="startGame('brick')">🧱 iPod Brick Breaker</li>
+            <li class="ipod-menu-item" onclick="startGame('memory')">🧠 Memory Rhythm Quiz</li>
+            <li class="ipod-menu-item" onclick="openMenu('stopwatch-overlay')">⏱️ Stopwatch</li>
+            <li class="ipod-menu-item" onclick="openMenu('clock-overlay')">🌍 World Clock</li>
+          </ul>
+        </div>
+
+        <!-- UTILITY OVERLAYS -->
+        <div class="generic-overlay" id="stopwatch-overlay">
+          <div class="ipod-menu-header"><span>⏱️ Stopwatch</span><span onclick="closeOverlay('stopwatch-overlay')">✕</span></div>
+          <div class="utility-content">
+            <div class="stopwatch-time" id="sw-time">00:00.00</div>
+            <div style="font-size:0.7rem; margin-bottom: 5px;">[Play: Start/Stop] [Center: Lap] [Prev: Reset]</div>
+            <div class="stopwatch-laps" id="sw-laps"></div>
+          </div>
+        </div>
+        <div class="generic-overlay" id="clock-overlay">
+          <div class="ipod-menu-header"><span>🌍 Clock</span><span onclick="closeOverlay('clock-overlay')">✕</span></div>
+          <div class="utility-content">
+            <div class="clock-time" id="clk-time">00:00</div>
+            <div class="clock-date" id="clk-date">Mon, Jan 1</div>
+          </div>
+        </div>
+
+        <div class="ipod-menu-overlay" id="surf-menu">
+          <div class="ipod-menu-header"><span>🌐 Surf Platform Hub</span><span onclick="closeOverlay('surf-menu')">✕</span></div>
+          <ul class="ipod-menu-list">
+            <li class="ipod-menu-item" onclick="openMenu('spotify-menu')">🎧 Spotify (Web Embed)</li>
+            <li class="ipod-menu-item" onclick="openInputPrompt('browser')">🌐 iPod Lite Web Browser</li>
+            <li class="ipod-menu-item" onclick="openInputPrompt('radio')">📻 Add Custom Radio URL</li>
+          </ul>
+        </div>
+
+        <div class="ipod-menu-overlay" id="spotify-menu">
+          <div class="ipod-menu-header"><span>🎧 Spotify Streams</span><span onclick="closeOverlay('spotify-menu')">✕</span></div>
+          <ul class="ipod-menu-list">
+            <li class="ipod-menu-item" onclick="playIframeContent('https://open.spotify.com/embed/playlist/37i9dQZEVXbMDoHDwVN2tF?utm_source=generator&theme=0', 'Spotify')">🌍 Top 50 - Global</li>
+            <li class="ipod-menu-item" onclick="playIframeContent('https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM5M?utm_source=generator&theme=0', 'Spotify')">🔥 Today's Top Hits</li>
+            <li class="ipod-menu-item" onclick="playIframeContent('https://open.spotify.com/embed/playlist/37i9dQZF1DWWQRwui0ExPn?utm_source=generator&theme=0', 'Spotify')">☕ Lofi Beats</li>
+            <li class="ipod-menu-item" onclick="openInputPrompt('spotify')">🔗 Enter Spotify Link</li>
+          </ul>
+        </div>
+
+        <div class="ipod-menu-overlay" id="settings-menu">
+          <div class="ipod-menu-header"><span>⚙️ Settings Menu</span><span onclick="closeOverlay('settings-menu')">✕</span></div>
+          <ul class="ipod-menu-list" id="settings-menu-list">
+            <li class="ipod-menu-item" onclick="openMenu('visualizer-menu')">📊 Visualizers (30+)</li>
+            <li class="ipod-menu-item" onclick="openMenu('wheel-customizer-menu')">✨ Wheel Animations & Glow</li>
+            <li class="ipod-menu-item" onclick="openMenu('casing-theme-menu')">🎨 iPod Hardware Casing</li>
+            <li class="ipod-menu-item" onclick="openMenu('lcd-theme-menu')">💡 LCD Backlight Theme</li>
+            <li class="ipod-menu-item" onclick="openMenu('font-menu')">🔤 LCD Font Style</li>
+            <li class="ipod-menu-item" onclick="openMenu('wallpaper-menu')">🖼️ LCD Wallpapers</li>
+            <li class="ipod-menu-item" onclick="toggleHapticSetting()">1. Haptics: <span id="lbl-haptics">ON</span></li>
+            <li class="ipod-menu-item" onclick="toggleSoundSetting()">2. Click Sounds: <span id="lbl-sounds">ON</span></li>
+            <li class="ipod-menu-item" onclick="cycleWheelSensitivity()">3. Wheel Sensitivity: <span id="lbl-sens">50%</span></li>
+            <li class="ipod-menu-item" onclick="openMenu('button-functions-menu')">4. Multi-Action Buttons Config</li>
+            <li class="ipod-menu-item" onclick="openMenu('search-engine-menu')">5. Search: <span id="lbl-search">DuckDuckGo</span></li>
+            <li class="ipod-menu-item" style="color:#ef4444;" onclick="location.reload()">🔄 Reboot System</li>
+          </ul>
+        </div>
+
+        <!-- 30+ VISUALIZERS -->
+        <div class="ipod-menu-overlay" id="visualizer-menu">
+          <div class="ipod-menu-header"><span>📊 Animations (30+)</span><span onclick="closeOverlay('visualizer-menu')">✕</span></div>
+          <ul class="ipod-menu-list">
+            <li class="ipod-menu-item" onclick="setVis('bars')">1. Spectrum Bars</li>
+            <li class="ipod-menu-item" onclick="setVis('wave')">2. Oscilloscope</li>
+            <li class="ipod-menu-item" onclick="setVis('vu')">3. Dual VU Meters</li>
+            <li class="ipod-menu-item" onclick="setVis('pulse')">4. Pulse Ring</li>
+            <li class="ipod-menu-item" onclick="setVis('matrix')">5. Matrix Rain</li>
+            <li class="ipod-menu-item" onclick="setVis('plasma')">6. Plasma Field</li>
+            <li class="ipod-menu-item" onclick="setVis('stars')">7. Warp Starfield</li>
+            <li class="ipod-menu-item" onclick="setVis('fire')">8. Flame Reactor</li>
+            <li class="ipod-menu-item" onclick="setVis('dna')">9. Helix DNA</li>
+            <li class="ipod-menu-item" onclick="setVis('tunnel')">10. Cyber Tunnel</li>
+            <li class="ipod-menu-item" onclick="setVis('radar')">11. Sonar Radar</li>
+            <li class="ipod-menu-item" onclick="setVis('vinyl')">12. Turntables</li>
+            <li class="ipod-menu-item" onclick="setVis('laser')">13. Laser Beams</li>
+            <li class="ipod-menu-item" onclick="setVis('galaxy')">14. Galaxy Spiral</li>
+            <li class="ipod-menu-item" onclick="setVis('snow')">15. Blizzard</li>
+            <li class="ipod-menu-item" onclick="setVis('iso')">16. 3D Iso Bars</li>
+            <li class="ipod-menu-item" onclick="setVis('heart')">17. Neon Heartbeat</li>
+            <li class="ipod-menu-item" onclick="setVis('ripple')">18. Water Ripple</li>
+            <li class="ipod-menu-item" onclick="setVis('wireframe')">19. 3D Wireframe</li>
+            <li class="ipod-menu-item" onclick="setVis('nebula')">20. Nebula Swirl</li>
+            <li class="ipod-menu-item" onclick="setVis('quake')">21. Bass Earthquake</li>
+            <li class="ipod-menu-item" onclick="setVis('solar')">22. Solar Flare</li>
+            <li class="ipod-menu-item" onclick="setVis('quantum')">23. Quantum Matrix</li>
+            <li class="ipod-menu-item" onclick="setVis('grid')">24. Synth Horizon</li>
+            <li class="ipod-menu-item" onclick="setVis('prism')">25. Light Prism</li>
+            <li class="ipod-menu-item" onclick="setVis('vortex')">26. Black Hole</li>
+            <li class="ipod-menu-item" onclick="setVis('storm')">27. Lightning Storm</li>
+            <li class="ipod-menu-item" onclick="setVis('lines')">28. Intersecting Lines</li>
+            <li class="ipod-menu-item" onclick="setVis('bubbles')">29. Bubble Pop</li>
+            <li class="ipod-menu-item" onclick="setVis('lissajous')">30. Lissajous Curves</li>
+            <li class="ipod-menu-item" onclick="setVis('off')">31. 🚫 Disabled</li>
+          </ul>
+        </div>
+
+        <div class="ipod-menu-overlay" id="wheel-customizer-menu">
+          <div class="ipod-menu-header"><span>✨ Wheel Glow</span><span onclick="closeOverlay('wheel-customizer-menu')">✕</span></div>
+          <ul class="ipod-menu-list">
+            <li class="ipod-menu-item" onclick="setWheelGlow('rgba(56,189,248,0.6)','#38bdf8')">🔵 Cyan Neon</li>
+            <li class="ipod-menu-item" onclick="setWheelGlow('rgba(236,72,153,0.6)','#ec4899')">💗 Hot Pink</li>
+            <li class="ipod-menu-item" onclick="setWheelGlow('rgba(34,197,94,0.6)','#22c55e')">🟢 Matrix Green</li>
+            <li class="ipod-menu-item" onclick="setWheelGlow('rgba(234,179,8,0.6)','#eab308')">🟡 Golden Cyber</li>
+            <li class="ipod-menu-item" onclick="setWheelGlow('rgba(168,85,247,0.6)','#a855f7')">🟣 Ultraviolet</li>
+            <li class="ipod-menu-item" onclick="toggleSparks()">⚡ Sparks: <span id="lbl-sparks">ON</span></li>
+            <li class="ipod-menu-item" onclick="setInnerWheel('pulse')">💫 Inner: Pulse</li>
+            <li class="ipod-menu-item" onclick="setInnerWheel('neon')">✨ Inner: Neon</li>
+            <li class="ipod-menu-item" onclick="setInnerWheel('spin')">🌀 Inner: Spin</li>
+            <li class="ipod-menu-item" onclick="setInnerWheel('none')">🚫 Inner: None</li>
+          </ul>
+        </div>
+
+        <!-- The rest of settings overlays (Fonts, Cases, Wallpapers) -->
+        <div class="ipod-menu-overlay" id="font-menu"><div class="ipod-menu-header"><span>🔤 Fonts</span><span onclick="closeOverlay('font-menu')">✕</span></div><ul class="ipod-menu-list"><li class="ipod-menu-item" onclick="setFont('default')">San Francisco</li><li class="ipod-menu-item" onclick="setFont('vt323', 'VT323')">VT323 Retro</li><li class="ipod-menu-item" onclick="setFont('press-start', 'Press Start 2P')">8-Bit</li><li class="ipod-menu-item" onclick="setFont('orbitron', 'Orbitron')">Orbitron</li></ul></div>
+        <div class="ipod-menu-overlay" id="casing-theme-menu"><div class="ipod-menu-header"><span>🎨 Hardware Casing</span><span onclick="closeOverlay('casing-theme-menu')">✕</span></div><ul class="ipod-menu-list"><li class="ipod-menu-item" onclick="setCasing('casing-white')">Classic White</li><li class="ipod-menu-item" onclick="setCasing('casing-black')">Stealth Black</li><li class="ipod-menu-item" onclick="setCasing('casing-titanium')">Cyber Titanium</li><li class="ipod-menu-item" onclick="setCasing('casing-atomic')">Atomic Purple</li><li class="ipod-menu-item" onclick="setCasing('casing-carbon')">Carbon Fiber</li></ul></div>
+        <div class="ipod-menu-overlay" id="lcd-theme-menu"><div class="ipod-menu-header"><span>💡 LCD Theme</span><span onclick="closeOverlay('lcd-theme-menu')">✕</span></div><ul class="ipod-menu-list"><li class="ipod-menu-item" onclick="setLcd('')">Olive Green</li><li class="ipod-menu-item" onclick="setLcd('theme-lcd-blue')">Ice Blue</li><li class="ipod-menu-item" onclick="setLcd('theme-lcd-amber')">Retro Amber</li><li class="ipod-menu-item" onclick="setLcd('theme-lcd-mono')">Monochrome</li><li class="ipod-menu-item" onclick="setLcd('theme-lcd-dark')">OLED Dark</li><li class="ipod-menu-item" onclick="setLcd('theme-lcd-synth')">Synthwave</li></ul></div>
+        <div class="ipod-menu-overlay" id="wallpaper-menu"><div class="ipod-menu-header"><span>🖼️ Wallpaper</span><span onclick="closeOverlay('wallpaper-menu')">✕</span></div><ul class="ipod-menu-list"><li class="ipod-menu-item" onclick="document.getElementById('wallpaper-input').click(); closeOverlay('wallpaper-menu')">Upload Custom...</li><li class="ipod-menu-item" onclick="setWall('radial-gradient(circle at 50% 50%, #4c1d95 0%, #1e1b4b 60%, #09090b 100%)')">Nebula</li><li class="ipod-menu-item" onclick="setWall('linear-gradient(180deg, #831843 0%, #312e81 60%, #020617 100%)')">Synth Grid</li><li class="ipod-menu-item" onclick="setWall('')">Clear Wallpaper</li></ul></div>
+        <div class="ipod-menu-overlay" id="search-engine-menu"><div class="ipod-menu-header"><span>🔍 Search Engine</span><span onclick="closeOverlay('search-engine-menu')">✕</span></div><ul class="ipod-menu-list"><li class="ipod-menu-item" onclick="setSearchEngine('duckduckgo')">🦆 DuckDuckGo</li><li class="ipod-menu-item" onclick="setSearchEngine('startpage')">🔒 Startpage</li><li class="ipod-menu-item" onclick="setSearchEngine('wikipedia')">📖 Wikipedia</li></ul></div>
+
+        <div class="ipod-menu-overlay" id="button-functions-menu">
+          <div class="ipod-menu-header"><span>🎮 Buttons</span><span onclick="closeOverlay('button-functions-menu')">✕</span></div>
+          <ul class="ipod-menu-list">
+            <li class="ipod-menu-item" onclick="confBtn('menu','tap')">MENU Tap: <span id="b-m-t">Menu</span></li>
+            <li class="ipod-menu-item" onclick="confBtn('menu','longPress')">MENU (2s): <span id="b-m-l">PowerOff</span></li>
+            <li class="ipod-menu-item" onclick="confBtn('prev','tap')">PREV Tap: <span id="b-p-t">Prev/Back</span></li>
+            <li class="ipod-menu-item" onclick="confBtn('next','tap')">NEXT Tap: <span id="b-n-t">Next</span></li>
+            <li class="ipod-menu-item" onclick="confBtn('play','tap')">PLAY Tap: <span id="b-pl-t">Play/Pause</span></li>
+            <li class="ipod-menu-item" onclick="confBtn('center','tap')">WHEEL Tap: <span id="b-c-t">Select</span></li>
+          </ul>
+        </div>
+
+        <div class="ipod-menu-overlay" id="master-library-menu">
+          <div class="ipod-menu-header"><span>📂 Library</span><span onclick="closeOverlay('master-library-menu')">✕</span></div>
+          <ul class="ipod-menu-list">
+            <li class="ipod-menu-item" onclick="showLib('audio')">🎵 Audio (<span id="c-audio">0</span>)</li>
+            <li class="ipod-menu-item" onclick="showLib('device-video')">📱 Video (<span id="c-vid">0</span>)</li>
+            <li class="ipod-menu-item" onclick="showLib('vod')">🎬 VOD/IPTV (<span id="c-vod">0</span>)</li>
+            <li class="ipod-menu-item" onclick="showLib('radio')">📻 Radio (<span id="c-rad">7</span>)</li>
+            <li class="ipod-menu-item" style="color:var(--lcd-accent);" onclick="document.getElementById('audio-input').click();">📥 Add Audio</li>
+            <li class="ipod-menu-item" style="color:var(--lcd-accent);" onclick="document.getElementById('video-input').click();">📥 Add Video</li>
+            <li class="ipod-menu-item" style="color:var(--lcd-accent);" onclick="document.getElementById('video-m3u-input').click();">📂 Load .M3U</li>
+          </ul>
+        </div>
+
+        <div class="ipod-menu-overlay" id="list-menu">
+          <div class="ipod-menu-header"><span id="list-title">Library</span><span onclick="closeOverlay('list-menu')">✕</span></div>
+          <ul class="ipod-menu-list" id="list-items"></ul>
+        </div>
+
+        <!-- Prompts & Power Off -->
+        <div class="ipod-prompt-overlay" id="ipod-input-screen">
+          <div style="font-weight: 800; margin-bottom: 6px;" id="input-prompt-text">ENTER URL</div>
+          <input type="text" id="ipod-text-input" class="prompt-input" autocomplete="off">
+          <div class="prompt-btns">
+            <button class="prompt-btn" onclick="submitPromptInput()">Go</button>
+            <button class="prompt-btn" onclick="closeInputPrompt()" style="background:transparent; color:inherit; border: 2px solid var(--lcd-border);">Cancel</button>
+          </div>
+        </div>
+
+        <div class="ipod-off-overlay" id="ipod-off-screen" onclick="powerOnDevice()">
+          <svg viewBox="0 0 170 170" style="width:46px;height:46px;fill:currentColor;margin-bottom:8px;">
+            <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.7 0.13-9.62-1.92-14.75-6.16-3.35-2.73-7.29-7.44-11.84-14.15-6.84-10.08-12.21-21.68-16.13-34.8-3.92-13.12-5.88-25.75-5.88-37.88 0-14.99 3.69-27.42 11.07-37.3 7.38-9.87 16.71-14.92 27.99-15.15 4.81 0 10.06 1.17 15.75 3.51 5.69 2.34 9.5 3.51 11.43 3.51 1.6 0 5.51-1.23 11.74-3.69 6.23-2.46 11.39-3.57 15.49-3.33 12.08 0.94 21.68 5.4 28.8 13.38-10.74 6.54-16.03 15.54-15.87 27 0.16 9.1 3.65 16.63 10.47 22.58 6.83 5.95 14.8 9.27 23.91 9.97-2.3 6.94-5.28 14.15-8.94 21.63zM119.22 31.02c0-7.04 2.53-13.79 7.59-20.25 5.06-6.46 11.41-10.37 19.06-10.77 0.23 0.94 0.35 1.83 0.35 2.67 0 7.03-2.61 13.84-7.83 20.43-5.22 6.59-11.53 10.42-18.93 10.48-0.12-0.83-0.24-1.68-0.24-2.56z"/>
+          </svg>
+          <span style="font-size:0.72rem;font-weight:700;letter-spacing:1px;">Press Wheel to Wake</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- AUDIO & FILE INPUTS -->
+    <audio id="main-audio" crossorigin="anonymous"></audio>
+    <audio id="radio-audio" crossorigin="anonymous"></audio> 
+    
+    <input type="file" id="audio-input" accept="audio/*" multiple onchange="handleUpload(event, 'audio')">
+    <input type="file" id="video-input" accept="video/*" multiple onchange="handleUpload(event, 'video')">
+    <input type="file" id="video-m3u-input" accept=".m3u,.m3u8" onchange="handleM3uUpload(event)">
+    <input type="file" id="wallpaper-input" accept="image/*" onchange="handleWallUpload(event)">
+
+    <!-- CLICK WHEEL -->
+    <div class="click-wheel-wrapper">
+      <div class="click-wheel" id="click-wheel-pad">
+        <div class="wheel-glow" id="wheel-glow"></div>
+        <canvas id="wheel-spark-canvas" class="wheel-spark-canvas"></canvas>
+        <button id="btn-menu" class="wheel-btn wheel-top">MENU</button>
+        <button id="btn-prev" class="wheel-btn wheel-left">⏮</button>
+        <button id="btn-next" class="wheel-btn wheel-right">⏭</button>
+        <button id="btn-play" class="wheel-btn wheel-bottom">⏯</button>
+        <div id="btn-center" class="center-button inner-wheel-pulse"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  /* --- STATE & GLOBALS --- */
+  let radioStations = [
+    { name: "CAPITAL FM", freq: "91.3 MHz", url: "https://radio.capitalfm.co.ug/stream", backup: "https://stream.zeno.fm/f3wvbb7524zuv" },
+    { name: "KFM UGANDA", freq: "93.3 MHz", url: "https://kfm.radioca.st/stream", backup: "https://stream.zeno.fm/9r9e13u41ceuv" },
+    { name: "SANYU FM", freq: "88.2 MHz", url: "https://sanyufm.radioca.st/stream", backup: "https://sanyufm.radioca.st/stream" }
+  ];
+  let audioPlaylist = [], deviceVideoPlaylist = [], vodPlaylist = [];
+  let currentIdx = { audio: 0, fm: 0, video: 0 };
+  let activeMode = 'fm'; // fm, audio, video, surf, browser, game_snake, game_brick, game_memory, stopwatch
+  let isPowerOn = true, hlsInstance = null;
+  
+  // Settings
+  let cfg = { haptics: true, sounds: true, sens: 50, sparks: true, vis: 'bars', shuffle: false, repeat: 'Off', speed: 1.0, sleep: 0, searchEngine: 'duckduckgo' };
+  const loadedFonts = new Set();
+  let btnBinds = {
+    menu: { tap: 'toggleMenu', longPress: 'powerOff' },
+    prev: { tap: 'prevTrack', longPress: 'none' },
+    next: { tap: 'nextTrack', longPress: 'none' },
+    play: { tap: 'playPause', longPress: 'pipToggle' },
+    center: { tap: 'selectOrPlay', longPress: 'none' }
+  };
+
+  /* --- AUDIO ENGINE & EQ (SAFE INIT) --- */
+  let audioCtx, analyserNode, dataArray, sourceNodes = new Map(), eqBands = [];
+  const initAudioContext = () => {
+    if (!audioCtx) {
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyserNode = audioCtx.createAnalyser();
+        analyserNode.fftSize = 128;
+        dataArray = new Uint8Array(analyserNode.frequencyBinCount);
+
+        // 5-Band EQ
+        const freqs = [60, 230, 910, 3600, 14000];
+        let prevNode = null;
+        freqs.forEach((freq, i) => {
+          const filter = audioCtx.createBiquadFilter();
+          filter.type = i===0 ? 'lowshelf' : i===freqs.length-1 ? 'highshelf' : 'peaking';
+          filter.frequency.value = freq;
+          filter.gain.value = 0;
+          if (prevNode) prevNode.connect(filter);
+          prevNode = filter;
+          eqBands.push(filter);
+        });
+        eqBands[eqBands.length - 1].connect(analyserNode);
+        analyserNode.connect(audioCtx.destination);
+      } catch(e) {}
+    }
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  };
+
+  const connectMedia = (el) => {
+    if(!audioCtx) initAudioContext();
+    if (audioCtx && !sourceNodes.has(el) && (String(el.src||'').startsWith('blob:') || String(el.src||'').startsWith(location.origin))) {
+      try {
+        const src = audioCtx.createMediaElementSource(el);
+        src.connect(eqBands[0]);
+        sourceNodes.set(el, src);
+      } catch(e) {}
+    }
+  };
+
+  const EQ_PRESETS = {
+    'Flat': [0,0,0,0,0], 'Bass Boost': [6,4,0,0,0], 'Treble Boost': [0,0,0,4,6],
+    'Rock': [5,3,-2,4,6], 'Pop': [-2,2,5,3,-2], 'Jazz': [4,2,-2,2,5],
+    'Vocal': [-2,0,5,4,-1], 'Electronic': [6,4,-2,2,6]
+  };
+  function setEQ(presetName) {
+    if(!audioCtx) initAudioContext();
+    const vals = EQ_PRESETS[presetName] || EQ_PRESETS['Flat'];
+    vals.forEach((v, i) => { if(eqBands[i]) eqBands[i].gain.value = v; });
+    document.getElementById('lbl-eq').innerText = presetName;
+    closeOverlay('eq-menu');
+    playClickSound();
+  }
+
+  /* --- HAPTICS & SOUND --- */
+  function triggerHaptic(d=15) { if(cfg.haptics && navigator.vibrate) try{navigator.vibrate(d);}catch(e){} }
+  function playClickSound() {
+    triggerHaptic(12);
+    if (!cfg.sounds) return;
+    try {
+      initAudioContext();
+      const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+      osc.type = 'triangle'; osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.016);
+      gain.gain.setValueAtTime(0.09, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.016);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.016);
+    } catch(e) {}
+  }
+
+  /* --- MISSING UI ACTIONS / ROBUST DEBUG FIXES --- */
+  function safeEl(id) { return document.getElementById(id); }
+
+  function toggleHapticSetting() {
+    cfg.haptics = !cfg.haptics;
+    const el = safeEl('lbl-haptics');
+    if (el) el.innerText = cfg.haptics ? 'ON' : 'OFF';
+    if (cfg.sounds) playClickSound();
+  }
+
+  function toggleSoundSetting() {
+    cfg.sounds = !cfg.sounds;
+    const el = safeEl('lbl-sounds');
+    if (el) el.innerText = cfg.sounds ? 'ON' : 'OFF';
+    if (cfg.sounds) playClickSound();
+  }
+
+  function cycleWheelSensitivity() {
+    const values = [25, 50, 75, 100, 125];
+    const current = Number(cfg.sens) || 50;
+    const i = values.indexOf(current);
+    cfg.sens = values[(i + 1) % values.length];
+    const el = safeEl('lbl-sens');
+    if (el) el.innerText = cfg.sens + '%';
+    playClickSound();
+  }
+
+  function setSearchEngine(engine) {
+    const engines = {
+      duckduckgo: { label: 'DuckDuckGo', url: 'https://html.duckduckgo.com/html/?q=' },
+      startpage: { label: 'Startpage', url: 'https://www.startpage.com/sp/search?query=' },
+      wikipedia: { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Special:Search?search=' }
+    };
+    if (!engines[engine]) engine = 'duckduckgo';
+    cfg.searchEngine = engine;
+    const el = safeEl('lbl-search');
+    if (el) el.innerText = engines[engine].label;
+    closeOverlay('search-engine-menu');
+    playClickSound();
+  }
+
+  let inputPromptType = null;
+  function openInputPrompt(type) {
+    if (!isPowerOn) return;
+    const screen = safeEl('ipod-input-screen');
+    const input = safeEl('ipod-text-input');
+    if (!screen || !input) return;
+    inputPromptType = type;
+    const title = safeEl('input-prompt-text');
+    const labels = { browser: 'ENTER WEB URL', radio: 'ENTER RADIO URL', spotify: 'ENTER SPOTIFY URL' };
+    if (title) title.innerText = labels[type] || 'ENTER URL';
+    input.value = '';
+    screen.classList.add('active');
+    closeAllSubmenus();
+    setTimeout(() => input.focus(), 50);
+  }
+
+  function closeInputPrompt() {
+    const screen = safeEl('ipod-input-screen');
+    const input = safeEl('ipod-text-input');
+    if (screen) screen.classList.remove('active');
+    if (input) input.value = '';
+    inputPromptType = null;
+  }
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, ch => ({
+      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+    }[ch]));
+  }
+
+  function normalizeUrl(value) {
+    let url = String(value || '').trim();
+    if (!url) return '';
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    try { return new URL(url).href; } catch (_) { return ''; }
+  }
+
+  function playIframeContent(url, title) {
+    if (!isPowerOn) return;
+    const frame = safeEl('main-iframe');
+    const viewport = safeEl('iframe-viewport');
+    if (!frame || !viewport) return;
+    const normalized = normalizeUrl(url);
+    if (!normalized) return;
+    closeAllSubmenus();
+    safeEl('browser-viewport')?.classList.remove('active');
+    activeMode = 'surf';
+    frame.src = normalized;
+    viewport.classList.add('active');
+    const t = safeEl('ipod-title-text'), sub = safeEl('ipod-sub-text');
+    if (t) t.innerText = title || 'WEB';
+    if (sub) sub.innerText = 'WEB';
+    playClickSound();
+  }
+
+  function submitPromptInput() {
+    const input = safeEl('ipod-text-input');
+    const value = input ? input.value.trim() : '';
+    const type = inputPromptType;
+    if (!value || !type) return;
+    closeInputPrompt();
+
+    if (type === 'radio') {
+      const url = normalizeUrl(value);
+      if (!url) return;
+      let name = 'CUSTOM RADIO';
+      try { name = new URL(url).hostname.replace(/^www\./, '').toUpperCase(); } catch (_) {}
+      radioStations.push({name, freq:'CUSTOM', url});
+      const count = safeEl('c-rad');
+      if (count) count.innerText = radioStations.length;
+      tuneRadio(radioStations.length - 1);
+      return;
+    }
+
+    if (type === 'spotify') {
+      let url = value;
+      // Convert normal Spotify playlist/album/track URLs to embeddable URLs.
+      const m = url.match(/open\.spotify\.com\/(playlist|album|track)\/([A-Za-z0-9]+)/i);
+      if (m) url = `https://open.spotify.com/embed/${m[1]}/${m[2]}`;
+      playIframeContent(url, 'Spotify');
+      return;
+    }
+
+    if (type === 'browser') {
+      const url = normalizeUrl(value);
+      if (!url) return;
+      const browser = safeEl('browser-viewport');
+      const frame = safeEl('main-iframe');
+      const iframeViewport = safeEl('iframe-viewport');
+      if (!browser || !frame || !iframeViewport) return;
+      activeMode = 'browser';
+      iframeViewport.classList.remove('active');
+      browser.classList.add('active');
+      const title = safeEl('browser-title'), content = safeEl('browser-content');
+      if (title) title.innerText = url;
+      if (content) content.innerHTML = '<p>Opening <strong>' + escapeHtml(url) + '</strong>…</p>';
+      frame.src = url;
+      // Keep browser mode visible even if the remote page blocks framing.
+      const loading = safeEl('browser-loading');
+      if (loading) loading.style.display = 'block';
+      frame.onload = () => { if (loading) loading.style.display = 'none'; };
+      return;
+    }
+  }
+
+  function handleWallUpload(e) {
+    const file = e?.target?.files?.[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    const old = safeEl('wallpaper-input')?.dataset.objectUrl;
+    if (old) URL.revokeObjectURL(old);
+    const url = URL.createObjectURL(file);
+    setWall(`url("${url}")`);
+    const input = safeEl('wallpaper-input');
+    if (input) input.dataset.objectUrl = url;
+  }
+
+  async function triggerPiP() {
+    const video = safeEl('main-video');
+    if (!video) return;
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+      } else if (document.pictureInPictureEnabled && typeof video.requestPictureInPicture === 'function') {
+        await video.requestPictureInPicture();
+      }
+    } catch (_) {}
+  }
+
+  function showVideoStatus(message) { const box=getEl('video-status'); if(!box)return; box.innerHTML='<div class="box">'+escapeHtml(message).replace(/\n/g,'<br>')+'</div>'; box.classList.remove('hidden'); }
+  function hideVideoStatus() { const box=getEl('video-status'); if(box)box.classList.add('hidden'); }
+  function setVideoStatus(tag, sub) { const a=getEl('ipod-status-tag'), b=getEl('ipod-sub-text'); if(a)a.innerText=tag; if(b&&sub)b.innerText=sub; }
+
+  /* --- UI MENUS & STATE --- */
+  function getEl(id) { return document.getElementById(id); }
+  function openMenu(id) { if(!isPowerOn)return; const m=getEl(id); if(!m)return; closeAllSubmenus(); playClickSound(); m.classList.add('active'); initSelectionFor(m); }
+  function closeOverlay(id) { const e=getEl(id); if(e)e.classList.remove('active'); }
+  function closeAllSubmenus() { document.querySelectorAll('.ipod-menu-overlay, .generic-overlay').forEach(el=>el.classList.remove('active')); }
+  function toggleIpodMenu(e) { if(e)e.stopPropagation(); if(!isPowerOn)return; playClickSound(); const m=getEl('ipod-menu'); m.classList.contains('active')?closeAllSubmenus():(closeAllSubmenus(),m.classList.add('active'),initSelectionFor(m)); }
+  function initSelectionFor(m) { const items=m.querySelectorAll('.ipod-menu-item'); if(!items.length)return; if(!m.querySelector('.selected')){items[0].classList.add('selected'); m.querySelector('.ipod-menu-list').scrollTop=0;}}
+
+  function updateIpodDisplay() {
+    if(!isPowerOn) return;
+    const mt = getEl('ipod-mode-tag'), st = getEl('ipod-status-tag'), tt = getEl('ipod-title-text'), subt = getEl('ipod-sub-text'), ma = getEl('main-audio'), ra = getEl('radio-audio');
+    
+    if (activeMode === 'fm') {
+      mt.innerText = 'iPod FM';
+      const s = radioStations[currentIdx.fm];
+      tt.innerText = s.name; subt.innerText = s.freq;
+      if (!st.innerText.includes('VOL') && st.innerText!=='ERROR') st.innerText = ra.paused ? 'PAUSED' : 'PLAYING';
+    } else if (activeMode === 'audio') {
+      mt.innerText = 'iPod Audio';
+      if (audioPlaylist.length > 0) {
+        tt.innerText = audioPlaylist[currentIdx.audio].name; subt.innerText = `Track ${currentIdx.audio+1}/${audioPlaylist.length}`;
+        if (!st.innerText.includes('VOL') && st.innerText!=='ERROR') st.innerText = ma.paused ? 'PAUSED' : 'PLAYING';
+      } else { tt.innerText = 'NO TRACKS'; subt.innerText = 'Load Audio'; st.innerText = 'PAUSED'; }
+    } else if (activeMode === 'video') {
+      mt.innerText = 'iPod Video'; if (!st.innerText) st.innerText = 'READY';
+    }
+  }
+
+  function selectMenuOption(mode) {
+    if(!isPowerOn)return; playClickSound(); closeAllSubmenus();
+    if (activeMode==='surf' || activeMode==='browser') { getEl('iframe-viewport').classList.remove('active'); getEl('browser-viewport').classList.remove('active'); getEl('main-iframe').src=''; }
+    activeMode = mode;
+    const vv = getEl('video-viewport'), mv = getEl('main-video'), ma = getEl('main-audio'), ra = getEl('radio-audio');
+    if (mode === 'video') {
+      vv.style.display='block'; ra.pause(); ma.pause();
+      getEl('iframe-viewport').classList.remove('active'); getEl('browser-viewport').classList.remove('active');
+      if(deviceVideoPlaylist.length>0) playVid(Math.min(currentIdx.video,deviceVideoPlaylist.length-1), 'device');
+      else if(vodPlaylist.length>0) playVid(0, 'vod');
+      else playVid(0, 'device');
+    } else if(mode!=='surf'&&mode!=='browser'&&!mode.startsWith('game_')) {
+      vv.style.display='none'; mv.pause(); if(hlsInstance){hlsInstance.destroy(); hlsInstance=null;}
+      if(mode==='fm') { ma.pause(); tuneRadio(currentIdx.fm); } else if(mode==='audio') { ra.pause(); if(audioPlaylist.length>0) playAud(currentIdx.audio); }
+    }
+    updateIpodDisplay();
+  }
+
+  /* --- MEDIA PLAYBACK (PLAY/PAUSE/NEXT/PREV) --- */
+  function playAud(idx) {
+    if(!audioPlaylist.length)return; activeMode='audio'; currentIdx.audio=idx;
+    const ma = getEl('main-audio'); getEl('radio-audio').pause();
+    connectMedia(ma); ma.src = audioPlaylist[idx].url; ma.playbackRate = cfg.speed;
+    ma.play().catch(()=>{}); updateIpodDisplay();
+  }
+  function tuneRadio(idx) {
+    if(activeMode==='surf'||activeMode==='browser')return; activeMode='fm'; currentIdx.fm=idx;
+    const ra = getEl('radio-audio'); getEl('main-audio').pause(); connectMedia(ra);
+    ra.src = radioStations[idx].url; ra.play().catch(()=>{ if(radioStations[idx].backup) { ra.src=radioStations[idx].backup; ra.play().catch(()=>{}); } }); updateIpodDisplay();
+  }
+  function playVid(idx, type) {
+    const list = type==='device' ? deviceVideoPlaylist : vodPlaylist;
+    const vv=getEl('video-viewport'), mv=getEl('main-video');
+    if(!vv||!mv)return;
+    activeMode='video';
+    vv.style.display='block';
+    getEl('iframe-viewport')?.classList.remove('active');
+    getEl('browser-viewport')?.classList.remove('active');
+    if(!list.length || !list[idx]){
+      if(hlsInstance){try{hlsInstance.destroy()}catch(_){} hlsInstance=null;}
+      mv.pause(); mv.removeAttribute('src'); mv.load();
+      getEl('ipod-title-text').innerText=type==='vod'?'NO IPTV CHANNELS':'NO VIDEOS';
+      getEl('ipod-sub-text').innerText=type==='vod'?'Load .M3U':'Add Video';
+      getEl('ipod-status-tag').innerText='EMPTY';
+      return;
+    }
+    currentIdx.video=idx;
+    if(hlsInstance){try{hlsInstance.destroy()}catch(_){} hlsInstance=null;}
+    mv.pause(); mv.removeAttribute('src'); mv.load();
+    const url=list[idx].url;
+    const remoteVod=type==='vod' && /^https?:\/\//i.test(url);
+    const hlsUrl=/\.m3u8(?:$|[?#])/i.test(url);
+    if(remoteVod && window.Hls && Hls.isSupported()){
+      hlsInstance=new Hls({enableWorker:true});
+      hlsInstance.attachMedia(mv);
+      hlsInstance.on(Hls.Events.MEDIA_ATTACHED,()=>hlsInstance.loadSource(url));
+      hlsInstance.on(Hls.Events.MANIFEST_PARSED,()=>mv.play().catch(()=>{}));
+      hlsInstance.on(Hls.Events.ERROR,(_,data)=>{
+        if(data?.fatal){
+          try{hlsInstance.destroy()}catch(_){} hlsInstance=null;
+          if(/\.(mp4|webm|ogg|mov|m4v)(?:$|[?#])/i.test(url)){ mv.src=url; mv.play().catch(()=>{}); }
+          else { getEl('ipod-status-tag').innerText='IPTV ERROR'; getEl('ipod-sub-text').innerText='Stream unavailable'; }
+        }
+      });
+    }else{
+      mv.src=url; mv.load(); mv.play().catch(()=>{});
+    }
+    getEl('ipod-title-text').innerText=list[idx].name||'VIDEO';
+    getEl('ipod-sub-text').innerText=type==='vod'?(list[idx].group||'IPTV'):'VIDEO';
+    getEl('ipod-status-tag').innerText='LOADING';
+    updateIpodDisplay();
+  }
+
+  function onPlayPause() {
+    if(!isPowerOn)return; playClickSound();
+    if (activeMode==='fm') { const r=getEl('radio-audio'); r.paused?r.play():r.pause(); }
+    else if (activeMode==='audio'&&audioPlaylist.length) { const m=getEl('main-audio'); m.paused?m.play():m.pause(); }
+    else if (activeMode==='video') { const v=getEl('main-video'); v.paused?v.play():v.pause(); }
+    updateIpodDisplay();
+  }
+  function onNext() {
+    if(!isPowerOn)return; playClickSound();
+    if(activeMode==='fm') tuneRadio((currentIdx.fm + 1) % radioStations.length);
+    else if(activeMode==='audio'&&audioPlaylist.length) {
+      if(cfg.shuffle) playAud(Math.floor(Math.random()*audioPlaylist.length));
+      else playAud((currentIdx.audio + 1) % audioPlaylist.length);
+    } else if(activeMode==='video') {
+      const list=deviceVideoPlaylist.length?deviceVideoPlaylist:vodPlaylist;
+      if(list.length) playVid((currentIdx.video+1)%list.length,deviceVideoPlaylist.length?'device':'vod');
+    }
+  }
+  function onPrev() {
+    if(!isPowerOn)return; playClickSound();
+    if(activeMode==='fm') tuneRadio((currentIdx.fm - 1 + radioStations.length) % radioStations.length);
+    else if(activeMode==='audio'&&audioPlaylist.length) playAud((currentIdx.audio - 1 + audioPlaylist.length) % audioPlaylist.length);
+    else if(activeMode==='video') { const list=deviceVideoPlaylist.length?deviceVideoPlaylist:vodPlaylist; if(list.length) playVid((currentIdx.video-1+list.length)%list.length,deviceVideoPlaylist.length?'device':'vod'); else goBackMenu(); }
+    else goBackMenu();
+  }
+  function goBackMenu() {
+    playClickSound();
+    const ovs = document.querySelectorAll('.ipod-menu-overlay.active, .generic-overlay.active');
+    if(ovs.length) { ovs.forEach(o=>o.classList.remove('active')); getEl('ipod-menu').classList.add('active'); initSelectionFor(getEl('ipod-menu')); }
+    else toggleIpodMenu();
+  }
+
+  /* --- PLAYBACK CONTROLS (SEEK, REPEAT, SPEED, SLEEP) --- */
+  function cycleShuffle() { cfg.shuffle=!cfg.shuffle; getEl('lbl-shuffle').innerText = cfg.shuffle?'On':'Off'; playClickSound(); }
+  function cycleRepeat() { 
+    const states = ['Off','Track','All']; cfg.repeat = states[(states.indexOf(cfg.repeat)+1)%states.length]; 
+    getEl('lbl-repeat').innerText = cfg.repeat; getEl('main-audio').loop = (cfg.repeat==='Track'); playClickSound(); 
+  }
+  function cycleSpeed() {
+    const spds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]; cfg.speed = spds[(spds.indexOf(cfg.speed)+1)%spds.length];
+    getEl('lbl-speed').innerText = cfg.speed+'x'; getEl('main-audio').playbackRate = cfg.speed; playClickSound();
+  }
+  
+  let sleepInterval;
+  function cycleSleepTimer() {
+    const times = [0, 15, 30, 45, 60]; cfg.sleep = times[(times.indexOf(cfg.sleep)+1)%times.length];
+    getEl('lbl-sleep').innerText = cfg.sleep ? cfg.sleep+'m' : 'Off';
+    clearInterval(sleepInterval);
+    if(cfg.sleep > 0) {
+      let rem = cfg.sleep * 60;
+      sleepInterval = setInterval(()=>{ rem--; if(rem<=0) powerOffDevice(); }, 1000);
+    }
+    playClickSound();
+  }
+
+  // Interactive SeekBar
+  const progContainer = document.querySelector('.ipod-progress-container');
+  const progScrub = getEl('progress-scrubber');
+  const fmtTime = (s) => isNaN(s)?"0:00":`${Math.floor(s/60)}:${Math.floor(s%60).toString().padStart(2,'0')}`;
+  
+  function scrubMedia(e) {
+    if(activeMode!=='audio'&&activeMode!=='video') return;
+    const ma = activeMode==='audio'?getEl('main-audio'):getEl('main-video');
+    if(!ma.duration) return;
+    const rect = progContainer.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, ((e.touches?e.touches[0].clientX:e.clientX) - rect.left) / rect.width));
+    ma.currentTime = pct * ma.duration;
+  }
+  progScrub.addEventListener('mousedown', scrubMedia);
+  progScrub.addEventListener('touchstart', (e)=>{ e.preventDefault(); scrubMedia(e); }, {passive:false});
+  progScrub.addEventListener('touchmove', (e)=>{ e.preventDefault(); scrubMedia(e); }, {passive:false});
+
+  getEl('main-audio').addEventListener('timeupdate', function() {
+    if(activeMode!=='audio' || !this.duration) return;
+    getEl('progress-fill').style.width = (this.currentTime / this.duration * 100)+'%';
+    getEl('time-current').innerText = fmtTime(this.currentTime);
+    getEl('time-total').innerText = fmtTime(this.duration);
+  });
+  getEl('main-audio').addEventListener('ended', () => { if(cfg.repeat!=='Track') { if(cfg.repeat==='All'||audioPlaylist.length>1) onNext(); }});
+
+  getEl('main-video').addEventListener('loadedmetadata',()=>{if(activeMode==='video'){hideVideoStatus();getEl('ipod-status-tag').innerText='READY';getEl('time-total').innerText=fmtTime(getEl('main-video').duration);}});
+  getEl('main-video').addEventListener('playing',()=>{if(activeMode==='video'){hideVideoStatus();getEl('ipod-status-tag').innerText='PLAYING';}});
+  getEl('main-video').addEventListener('waiting',()=>{if(activeMode==='video'){getEl('ipod-status-tag').innerText='BUFFERING';showVideoStatus('BUFFERING…');}});
+  getEl('main-video').addEventListener('error',()=>{if(activeMode==='video'){getEl('ipod-status-tag').innerText='VIDEO ERROR';getEl('ipod-sub-text').innerText='FORMAT / STREAM ERROR';showVideoStatus('VIDEO ERROR\nThis format or stream cannot be played in this browser.');}});
+  getEl('main-video').addEventListener('timeupdate',function(){if(activeMode==='video'&&this.duration){getEl('progress-fill').style.width=(this.currentTime/this.duration*100)+'%';getEl('time-current').innerText=fmtTime(this.currentTime);}});
+  getEl('main-video').addEventListener('ended',()=>onNext());
+
+  /* --- VOLUME HUD --- */
+  let volTimeout;
+  function showVolHud(vol) {
+    const hud = getEl('volume-hud'), fill = getEl('volume-fill');
+    fill.style.width = (vol*100)+'%'; hud.classList.add('show');
+    clearTimeout(volTimeout); volTimeout = setTimeout(()=>hud.classList.remove('show'), 1500);
+  }
+
+  /* --- FILE UPLOADS & LISTS --- */
+  function handleUpload(e, type) {
+    const files=Array.from(e?.target?.files||[]); if(!files.length)return;
+    const startCount=type==='audio'?audioPlaylist.length:deviceVideoPlaylist.length;
+    files.forEach(f=>{
+      const item={name:f.name,url:URL.createObjectURL(f),type:f.type};
+      if(type==='audio') audioPlaylist.push(item); else deviceVideoPlaylist.push(item);
+    });
+    getEl('c-audio').innerText=audioPlaylist.length; getEl('c-vid').innerText=deviceVideoPlaylist.length;
+    if(type==='audio'){ currentIdx.audio=startCount; playAud(startCount); }
+    else { currentIdx.video=startCount; selectMenuOption('video'); }
+    e.target.value='';
+  }
+  function handleM3uUpload(e) {
+    const file=e?.target?.files?.[0]; if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const lines=String(ev.target.result||'').replace(/^\uFEFF/,'').split(/\r?\n/);
+        let meta={name:'IPTV Channel',logo:'',group:''}, parsed=[];
+        for(const raw of lines){
+          const l=raw.trim(); if(!l)continue;
+          if(/^#EXTINF/i.test(l)){
+            const comma=l.indexOf(','), head=comma>=0?l.slice(0,comma):l, name=comma>=0?l.slice(comma+1).trim():'';
+            const logo=(head.match(/(?:tvg-logo|logo)=["']([^"']*)["']/i)||[])[1]||'';
+            const group=(head.match(/group-title=["']([^"']*)["']/i)||[])[1]||'';
+            meta={name:name||'IPTV Channel',logo,group};
+          } else if(!l.startsWith('#')){
+            const url=normalizeUrl(l);
+            if(url&&/^https?:\/\//i.test(url))parsed.push({...meta,url});
+            meta={name:'IPTV Channel',logo:'',group:''};
+          }
+        }
+        const seen=new Set(vodPlaylist.map(x=>x.url)); let added=0;
+        for(const item of parsed){if(!seen.has(item.url)){vodPlaylist.push(item);seen.add(item.url);added++;}}
+        const count=getEl('c-vod'); if(count)count.innerText=vodPlaylist.length;
+        e.target.value='';
+        if(!added){alert('No new usable HTTP/HTTPS channel URLs were found in this M3U/M3U8 file.');return;}
+        // Never auto-play the first imported IPTV stream. Open the channel list first.
+        activeMode='video'; getEl('video-viewport').style.display='none';
+        getEl('ipod-title-text').innerText='IPTV PLAYLIST';
+        getEl('ipod-sub-text').innerText=added+' CHANNEL'+(added===1?'':'S');
+        getEl('ipod-status-tag').innerText='LOADED';
+        showLib('vod');
+      }catch(err){console.error('M3U parse error',err);alert('Could not parse the M3U file: '+(err.message||err));}
+    };
+    reader.onerror=()=>alert('Could not read the playlist file.'); reader.readAsText(file);
+  }
+
+  function showLib(type) {
+    const listEl=getEl('list-items'); if(!listEl)return;
+    closeAllSubmenus(); playClickSound();
+    const src=type==='audio'?audioPlaylist:type==='device-video'?deviceVideoPlaylist:type==='vod'?vodPlaylist:radioStations;
+    getEl('list-title').innerText=type.toUpperCase()+" LIBRARY";
+    if(!src.length){listEl.innerHTML='<li class="ipod-menu-item">Empty — add media first</li>';}
+    else {
+      listEl.innerHTML=src.map((t,i)=>{
+        const name=escapeHtml(t.name||'Untitled');
+        const group=t.group?` <small style="opacity:.65">${escapeHtml(t.group)}</small>`:'';
+        const action=type==='audio'?`playAud(${i})`:type==='radio'?`tuneRadio(${i})`:`playVid(${i},'${type==='vod'?'vod':'device'}')`;
+        return `<li class="ipod-menu-item" onclick="closeOverlay('list-menu');${action}"><span>${name}${group}</span></li>`;
+      }).join('');
+    }
+    getEl('list-menu').classList.add('active'); initSelectionFor(getEl('list-menu'));
+  }
+
+
+
+  /* --- ROTARY ENGINE & TOUCH WHEEL --- */
+  let wCX=0, wCY=0, lAng=0, scrDel=0, dragC=false, cStartX=0;
+  const pad = getEl('click-wheel-pad'), cBtn = getEl('btn-center');
+
+  cBtn.addEventListener('touchstart', (e)=>{ if(!isPowerOn)return; dragC=true; cStartX=e.touches[0].clientX; e.stopPropagation(); }, {passive:false});
+  cBtn.addEventListener('mousedown', (e)=>{ if(!isPowerOn)return; dragC=true; cStartX=e.clientX; e.stopPropagation(); });
+
+  const startRot = (x,y) => {
+    if(!isPowerOn||dragC)return; const r=pad.getBoundingClientRect(); wCX=r.left+r.width/2; wCY=r.top+r.height/2; lAng=Math.atan2(y-wCY, x-wCX);
+    spawnSparks(x-r.left, y-r.top, 4);
+  };
+  pad.addEventListener('touchstart', (e)=>{ e.preventDefault(); startRot(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
+  pad.addEventListener('mousedown', (e)=>{ startRot(e.clientX, e.clientY); });
+
+  const moveRot = (x,y) => {
+    if(!isPowerOn||(!dragC && wCX===0))return;
+    const sens = Math.max(0.2, cfg.sens/50);
+    if(dragC) {
+      if(Math.abs((x-cStartX)*sens)>8){ scrollMenu((x-cStartX)>0?1:-1); cStartX=x; } return;
+    }
+    let ang = Math.atan2(y-wCY, x-wCX), del = ang-lAng;
+    if(del>Math.PI)del-=2*Math.PI; if(del<-Math.PI)del+=2*Math.PI;
+    scrDel += del*sens; const thresh = 0.25/Math.max(0.2, cfg.sens/40);
+    if(Math.abs(scrDel)>thresh) {
+      const dir=scrDel>0?1:-1; scrDel=0;
+      spawnSparks(pad.clientWidth/2+(Math.random()*60-30), pad.clientHeight/2+(Math.random()*60-30), 2);
+      
+      if(document.querySelector('.ipod-menu-overlay.active, .generic-overlay.active')) scrollMenu(dir);
+      else if(activeMode==='browser') getEl('browser-content').scrollTop += dir*35;
+      else if(activeMode.startsWith('game_')) gameInput(dir);
+      else {
+        // Volume
+        playClickSound(); const p = activeMode==='fm'?getEl('radio-audio'):(activeMode==='audio'?getEl('main-audio'):getEl('main-video'));
+        if(p) { p.volume=Math.max(0,Math.min(1,p.volume+dir*0.05)); showVolHud(p.volume); getEl('ipod-status-tag').innerText=`VOL: ${Math.round(p.volume*100)}%`; }
+      }
+      lAng=ang;
+    }
+  };
+  window.addEventListener('touchmove', (e)=>{ if(e.touches.length) moveRot(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
+  window.addEventListener('mousemove', (e)=>{ if(e.buttons===1) moveRot(e.clientX, e.clientY); });
+  window.addEventListener('touchend', ()=>{ dragC=false; wCX=0; });
+  window.addEventListener('mouseup', ()=>{ dragC=false; wCX=0; });
+
+  function scrollMenu(dir) {
+    const act = document.querySelector('.ipod-menu-overlay.active, .generic-overlay.active'); if(!act)return; playClickSound();
+    const items = Array.from(act.querySelectorAll('.ipod-menu-item')); if(!items.length)return;
+    let idx = items.findIndex(i=>i.classList.contains('selected')); if(idx===-1)idx=0;
+    let nIdx = Math.max(0, Math.min(items.length-1, idx+dir));
+    items[idx].classList.remove('selected'); items[nIdx].classList.add('selected'); items[nIdx].scrollIntoView({block:'nearest'});
+  }
+
+  /* --- SPARKS ENGINE --- */
+  const sCv = getEl('wheel-spark-canvas'), sCx = sCv.getContext('2d'); let sparks=[];
+  window.addEventListener('resize', ()=>{ sCv.width=sCv.parentElement.clientWidth; sCv.height=sCv.parentElement.clientHeight; }); sCv.width=250; sCv.height=250;
+  function spawnSparks(x,y,c=4){ if(!cfg.sparks)return; for(let i=0;i<c;i++){ const a=Math.random()*Math.PI*2, s=Math.random()*3+1.5; sparks.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,l:1,d:Math.random()*0.04+0.03,sz:Math.random()*3+2});}}
+  function renderSparks(){
+    sCx.clearRect(0,0,sCv.width,sCv.height); if(sparks.length){ sCx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--wheel-spark-color').trim()||'#38bdf8'; for(let i=sparks.length-1;i>=0;i--){ let p=sparks[i]; p.x+=p.vx; p.y+=p.vy; p.l-=p.d; if(p.l<=0)sparks.splice(i,1); else{sCx.globalAlpha=p.l; sCx.fillRect(p.x,p.y,p.sz,p.sz);} } sCx.globalAlpha=1; }
+    requestAnimationFrame(renderSparks);
+  } renderSparks();
+
+  /* --- GAMES & UTILITIES ENGINE --- */
+  let game={ t:null, snake:[], food:{}, dir:{x:1,y:0}, score:0, pX:50, bX:50, bY:50, bdX:2, bdY:-2, bricks:[], memory:[], memoryStep:0 };
+  const memorySeq=[0,1,2,3,2,1,0,3];
+  function startGame(type) { activeMode='game_'+type; closeAllSubmenus(); playClickSound(); getEl('ipod-title-text').innerText=type.toUpperCase(); getEl('ipod-sub-text').innerText='PLAYING';
+    if(type==='snake') { game.snake=[{x:10,y:10}]; game.dir={x:1,y:0}; game.food={x:15,y:10}; game.score=0; }
+    if(type==='brick') { game.pX=50; game.bX=50; game.bY=80; game.bdX=1; game.bdY=-1; game.bricks=Array(30).fill(1); game.score=0; }
+    if(type==='memory') { game.memory=[]; game.memoryStep=0; setTimeout(()=>{ if(activeMode==='game_memory') memoryRound(); },300); }
+  }
+  function memoryRound(){ if(activeMode!=='game_memory')return; game.memory=memorySeq.slice(0,Math.min(memorySeq.length,game.memoryStep+3)); game.memoryStep=(game.memoryStep+1)%6; }
+  function gameInput(dir) {
+    if(activeMode==='game_memory'){ game.memoryStep=(game.memoryStep+1)%6; memoryRound(); return; }
+    if(activeMode==='game_snake'){ if(dir>0){ let t=game.dir.x; game.dir.x=-game.dir.y; game.dir.y=t; } else { let t=game.dir.x; game.dir.x=game.dir.y; game.dir.y=-t; } }
+    if(activeMode==='game_brick'){ game.pX = Math.max(0, Math.min(100, game.pX+(dir*10))); }
+  }
+
+  // Stopwatch & Clock
+  let swTime=0, swInt=null, swRun=false;
+  getEl('stopwatch-overlay').addEventListener('click', ()=>{ if(!swRun){swInt=setInterval(()=>{swTime+=10; getEl('sw-time').innerText=(swTime/1000).toFixed(2);},10); swRun=true;}else{clearInterval(swInt);swRun=false;} });
+  setInterval(()=>{ const d=new Date(); getEl('clk-time').innerText=d.getHours().toString().padStart(2,'0')+":"+d.getMinutes().toString().padStart(2,'0'); getEl('clk-date').innerText=d.toDateString(); }, 1000);
+
+  /* --- VISUALIZERS & RENDERING (30+ Engines inside one loop) --- */
+  const cv = getEl('visualizer-canvas'), cx = cv.getContext('2d');
+  window.addEventListener('resize', ()=>{ cv.width=cv.parentElement.clientWidth; cv.height=cv.parentElement.clientHeight; }); cv.width=300; cv.height=200;
+  let visP = Array(80).fill().map(()=>({x:Math.random()*300, y:Math.random()*200, a:Math.random()*Math.PI*2, s:Math.random()*2+1}));
+  
+  function renderVis() {
+    requestAnimationFrame(renderVis);
+    const w=cv.width, h=cv.height; cx.clearRect(0,0,w,h);
+    const prim = getComputedStyle(document.body).getPropertyValue('--lcd-border').trim()||'#232d20'; cx.fillStyle=prim; cx.strokeStyle=prim;
+
+    // Run Games if active
+    if(activeMode.startsWith('game_')) {
+      if(activeMode==='game_snake') {
+        if(Math.random()<0.1){ let head={x:game.snake[0].x+game.dir.x, y:game.snake[0].y+game.dir.y}; game.snake.unshift(head); if(head.x===game.food.x&&head.y===game.food.y){game.score++;game.food={x:Math.floor(Math.random()*20),y:Math.floor(Math.random()*15)};}else game.snake.pop(); }
+        game.snake.forEach(s=>cx.fillRect(s.x*(w/20), s.y*(h/15), w/20-1, h/15-1)); cx.fillRect(game.food.x*(w/20), game.food.y*(h/15), w/20, h/15); cx.fillText("Score:"+game.score,5,10);
+      } else if(activeMode==='game_brick') {
+        cx.fillRect((game.pX/100)*w-20, h-10, 40, 5); cx.beginPath(); cx.arc((game.bX/100)*w, (game.bY/100)*h, 4, 0, 6); cx.fill();
+        game.bX+=game.bdX; game.bY+=game.bdY; if(game.bX<0||game.bX>100)game.bdX*=-1; if(game.bY<0)game.bdY*=-1; if(game.bY>100){game.bY=80; game.score=0;}
+        if(game.bY>90 && Math.abs(game.bX-game.pX)<15) game.bdY*=-1;
+        game.bricks.forEach((b,i)=>{ if(b){ let bx=(i%10)*10, by=Math.floor(i/10)*10; cx.fillRect((bx/100)*w+2, (by/100)*h+2, w/10-4, h/10-4); if(Math.abs(game.bX-bx)<5 && Math.abs(game.bY-by)<5){game.bricks[i]=0; game.bdY*=-1; game.score++;} } });
+      } else if(activeMode==='game_memory') {
+        cx.font='bold 14px sans-serif'; cx.textAlign='center'; cx.fillText('MEMORY RHYTHM',w/2,22);
+        const labels=['●','▲','■','◆']; for(let i=0;i<4;i++){ const x=w*(i+0.5)/4,y=h/2; cx.fillText(labels[i],x,y); }
+        cx.font='11px sans-serif'; cx.fillText('Spin wheel to advance sequence',w/2,h-12); cx.textAlign='start';
+      } return;
+    }
+
+    if(!isPowerOn || cfg.vis==='off' || activeMode==='video' || activeMode==='surf') return;
+    const isP = (activeMode==='fm'&&!getEl('radio-audio').paused) || (activeMode==='audio'&&!getEl('main-audio').paused);
+    if(analyserNode && isP && activeMode==='audio') analyserNode.getByteFrequencyData(dataArray); else { if(!dataArray)dataArray=new Uint8Array(32); for(let i=0;i<dataArray.length;i++)dataArray[i]=isP?Math.floor(Math.sin(Date.now()*0.005+i)*80+100):15; }
+
+    const v = cfg.vis;
+    // 30+ Procedural Algorithms
+    if(v==='bars'||v==='iso') { const c=16, bw=(w/c)-3; for(let i=0;i<c;i++){ const bh=(dataArray[i*2]/255)*h*0.8; if(v==='iso'){cx.strokeRect(i*(bw+3)+4,h-bh-4,bw,bh);cx.beginPath();cx.moveTo(i*(bw+3)+4,h-bh-4);cx.lineTo(i*(bw+3)+8,h-bh-8);cx.stroke();} else cx.fillRect(i*(bw+3)+4,h-bh-4,bw,bh); } }
+    else if(v==='wave'||v==='plasma') { cx.beginPath(); cx.lineWidth=2; const sl=w/dataArray.length; let x=0; for(let i=0;i<dataArray.length;i++){ const y=(dataArray[i]/255)*h*0.8 + h*0.1 + (v==='plasma'?Math.sin(Date.now()*0.003+i)*10:0); if(i===0)cx.moveTo(x,y); else cx.lineTo(x,y); x+=sl;} cx.stroke(); }
+    else if(v==='vu') { const avg = dataArray.reduce((a,b)=>a+b,0)/dataArray.length, a=(avg/255)*Math.PI-Math.PI/2; cx.save(); cx.translate(w/2, h-8); cx.beginPath(); cx.arc(0,0,42,Math.PI,0); cx.lineWidth=2; cx.stroke(); cx.rotate(a); cx.beginPath(); cx.moveTo(0,0); cx.lineTo(0,-38); cx.lineWidth=3; cx.stroke(); cx.restore(); }
+    else if(v==='pulse'||v==='heart') { const r = 18+(dataArray[5]/255)*40; cx.beginPath(); cx.arc(w/2,h/2,r,0,6); cx.lineWidth=3; cx.stroke(); if(v==='heart'){cx.beginPath(); cx.arc(w/2,h/2,r-10,0,6); cx.fill();} }
+    else if(v==='matrix'||v==='matrix-rain2') { cx.font='12px monospace'; visP.forEach(p=>{ cx.fillText("10IPODPRO"[Math.floor(Math.random()*9)], p.x, p.y); p.y+=p.s*(dataArray[1]/100); if(p.y>h)p.y=0; }); }
+    else if(v==='stars'||v==='snow'||v==='hyper-drive') { visP.forEach(p=>{ cx.fillRect(p.x, p.y, v==='snow'?2:p.s, v==='hyper-drive'?p.s*5:p.s); if(v==='hyper-drive'){ p.x+=(p.x-w/2)*0.05; p.y+=(p.y-h/2)*0.05; } else { p.y+=p.s*(dataArray[2]/50); p.x+=Math.sin(p.y*0.05); } if(p.y>h||p.x<0||p.x>w||p.y<0){p.y=v==='hyper-drive'?h/2:0; p.x=w/2+(Math.random()*100-50);} }); }
+    else if(v==='radar'||v==='sonar') { const t=Date.now()*0.001; cx.save(); cx.translate(w/2,h/2); cx.beginPath(); cx.arc(0,0,h/2-5,0,6); cx.stroke(); cx.rotate(t); cx.beginPath(); cx.moveTo(0,0); cx.lineTo(0, h/2-5); cx.stroke(); cx.restore(); }
+    else if(v==='vinyl'||v==='vinyl-dj') { const t=Date.now()*0.001; const drawV=(x,y)=>{ cx.save(); cx.translate(x,y); cx.rotate(t); cx.beginPath(); cx.arc(0,0,30+(dataArray[3]/255)*5,0,6); cx.fill(); cx.fillStyle='#fff'; cx.beginPath(); cx.arc(0,0,10,0,6); cx.fill(); cx.restore();}; if(v==='vinyl') drawV(w/2,h/2); else { drawV(w/3,h/2); drawV(w*0.66,h/2); } }
+    else if(v==='laser'||v==='storm') { for(let i=0;i<10;i++){ cx.beginPath(); cx.moveTo(w/2, h); cx.lineTo(Math.random()*w, Math.random()*h/2); cx.lineWidth=(dataArray[i]/255)*3; cx.stroke(); } }
+    else if(v==='galaxy'||v==='vortex'||v==='nebula') { const t=Date.now()*0.002, s=dataArray[4]/100; cx.save(); cx.translate(w/2,h/2); cx.rotate(t); for(let i=0;i<30;i++){ cx.beginPath(); cx.arc(Math.cos(i)*i*s, Math.sin(i)*i*s, 2, 0, 6); cx.fill(); } cx.restore(); }
+    else if(v==='dna') { const t=Date.now()*0.002; for(let i=0;i<20;i++){ const y=i*10, x1=w/2+Math.sin(t+i*0.2)*40, x2=w/2+Math.sin(t+i*0.2+Math.PI)*40; cx.fillRect(x1,y,4,4); cx.fillRect(x2,y,4,4); cx.beginPath(); cx.moveTo(x1,y); cx.lineTo(x2,y); cx.stroke(); } }
+    else if(v==='wireframe'||v==='grid') { const t=Date.now()*0.005; for(let i=0;i<10;i++){ const y = (i*20+t*50)%h; cx.beginPath(); cx.moveTo(0,y); cx.lineTo(w,y); cx.stroke(); } }
+    else if(v==='lissajous') { const t=Date.now()*0.002; cx.beginPath(); for(let i=0;i<100;i++){ const x=w/2+Math.sin(t*3+i*0.1)*80, y=h/2+Math.cos(t*2+i*0.1)*60; if(i===0)cx.moveTo(x,y); else cx.lineTo(x,y); } cx.stroke(); }
+    else { const avg = dataArray[0]/255; cx.beginPath(); cx.arc(w/2,h/2, 20+avg*50, 0,6); cx.fill(); } // Fallback generic
+  }
+  renderVis();
+
+  /* --- SETTINGS & UTILS --- */
+  function setVis(m) { cfg.vis=m; closeOverlay('visualizer-menu'); playClickSound(); }
+  function toggleSparks() { cfg.sparks=!cfg.sparks; getEl('lbl-sparks').innerText=cfg.sparks?'ON':'OFF'; playClickSound(); }
+  function setWheelGlow(c,s) { document.documentElement.style.setProperty('--wheel-glow-color',c); document.documentElement.style.setProperty('--wheel-spark-color',s); playClickSound(); closeOverlay('wheel-customizer-menu'); }
+  function setInnerWheel(a) { const b=getEl('btn-center'); b.className='center-button'; if(a!=='none')b.classList.add('inner-wheel-'+a); playClickSound(); closeOverlay('wheel-customizer-menu'); }
+  function setFont(k, n) { if(k==='default'){ document.documentElement.style.setProperty('--lcd-font-family',"-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"); } else if(n){ if(!loadedFonts.has(n)){ const l=document.createElement('link'); l.rel='stylesheet'; l.href=`https://fonts.googleapis.com/css2?family=${encodeURIComponent(n).replace(/%20/g,'+')}:wght@400;700&display=swap`; document.head.appendChild(l); loadedFonts.add(n); } document.documentElement.style.setProperty('--lcd-font-family',`'${n}', sans-serif`); } playClickSound(); closeOverlay('font-menu'); }
+  function setCasing(c) { getEl('ipod-hardware-body').className=`ipod-body ${c}`; playClickSound(); closeOverlay('casing-theme-menu'); }
+  function setLcd(c) { document.body.className=`theme-lcd ${c}`; playClickSound(); closeOverlay('lcd-theme-menu'); }
+  function setWall(v) { const lcd=getEl('ipod-screen-element'); if(v){lcd.style.backgroundImage=v; lcd.classList.add('has-wallpaper');} else {lcd.style.backgroundImage=''; lcd.classList.remove('has-wallpaper');} playClickSound(); closeOverlay('wallpaper-menu'); }
+
+  // Power
+  function powerOffDevice() { closeAllSubmenus(); isPowerOn=false; getEl('radio-audio').pause(); getEl('main-audio').pause(); getEl('main-video').pause(); getEl('ipod-off-screen').classList.add('active'); updateIpodDisplay(); playClickSound(); }
+  function powerOnDevice() { if(isPowerOn)return; playClickSound(); isPowerOn=true; getEl('ipod-off-screen').classList.remove('active'); getEl('video-viewport').style.display='none'; activeMode='fm'; updateIpodDisplay(); }
+
+  // Config Buttons
+  const bActs = [{id:'toggleMenu',l:'Menu'}, {id:'powerOff',l:'Power'}, {id:'playPause',l:'Play/Pause'}, {id:'nextTrack',l:'Next'}, {id:'prevTrack',l:'Prev'}, {id:'selectOrPlay',l:'Select'}, {id:'pipToggle',l:'PiP'}, {id:'none',l:'None'}];
+  function confBtn(k, t) { const cur=btnBinds[k][t]||'none'; const nx=(bActs.findIndex(a=>a.id===cur)+1)%bActs.length; btnBinds[k][t]=bActs[nx].id; getEl(`b-${k[0]}-${t[0]}`).innerText=bActs[nx].l; playClickSound(); }
+  function execBtn(a) {
+    if(a==='toggleMenu')onMenuButtonClick(); else if(a==='powerOff')powerOffDevice(); else if(a==='playPause')onPlayPause();
+    else if(a==='nextTrack')onNext(); else if(a==='prevTrack')onPrev(); else if(a==='selectOrPlay'){ const ac=document.querySelector('.ipod-menu-overlay.active .selected'); if(ac){playClickSound();ac.click();}else onPlayPause();}
+    else if(a==='pipToggle')triggerPiP();
+  }
+  function animateButtonPress(id){ const e=getEl(id); if(!e)return; e.classList.remove('pressed'); void e.offsetWidth; e.classList.add('pressed'); setTimeout(()=>e.classList.remove('pressed'),220); }
+  function bindBtn(id, k) {
+    const e = getEl(id); if (!e) return;
+    let timer = null, longPressed = false, activePointer = null;
+    const clear = () => { if (timer) { clearTimeout(timer); timer = null; } };
+    const end = (ev) => {
+      if (activePointer !== null && ev && ev.pointerId !== activePointer) return;
+      clear();
+      if (ev) { try { e.releasePointerCapture?.(ev.pointerId); } catch (_) {} }
+      activePointer = null;
+      if (!longPressed) execBtn(btnBinds[k].tap);
+      longPressed = false;
+    };
+    e.addEventListener('pointerdown', ev => {
+      if (!isPowerOn) return;
+      ev.preventDefault(); ev.stopPropagation();
+      activePointer = ev.pointerId;
+      try { e.setPointerCapture?.(ev.pointerId); } catch (_) {}
+      longPressed = false;
+      animateButtonPress(id);
+      clear();
+      timer = setTimeout(() => {
+        longPressed = true;
+        playClickSound();
+        execBtn(btnBinds[k].longPress);
+      }, 750);
+    });
+    e.addEventListener('pointerup', ev => { ev.preventDefault(); ev.stopPropagation(); end(ev); });
+    e.addEventListener('pointercancel', ev => { ev.stopPropagation(); clear(); activePointer=null; longPressed=false; });
+    e.addEventListener('lostpointercapture', () => { if (activePointer !== null) { clear(); activePointer=null; } });
+  }
+  bindBtn('btn-menu','menu'); bindBtn('btn-prev','prev'); bindBtn('btn-next','next'); bindBtn('btn-play','play'); bindBtn('btn-center','center');
+  function onMenuButtonClick(){ if(document.querySelectorAll('.ipod-menu-overlay.active, .generic-overlay.active').length>1) goBackMenu(); else toggleIpodMenu(); }
+
+  window.addEventListener('error', ev=>{
+    console.error('iPod runtime error:',ev.error||ev.message);
+    if(activeMode==='video' && getEl('video-viewport').style.display!=='none') showVideoStatus('APP ERROR\\n'+(ev.message||'Unknown JavaScript error'));
+  });
+
+  updateIpodDisplay();
+</script>
+</body>
+</html>
