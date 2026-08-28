@@ -3,16 +3,14 @@ name: Build Android APK
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
-      - master
+    branches: [ main, master ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up Java 17
@@ -26,41 +24,52 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Extract Android project
+      - name: Prepare Android project
         shell: bash
         run: |
           set -e
 
-          ZIP_FILE=$(find . -maxdepth 1 -type f -name '*.zip' | head -n 1)
+          if [ -f app/build.gradle.kts ] || [ -f app/build.gradle ]; then
+            echo "Android project already exists."
+            exit 0
+          fi
+
+          ZIP_FILE=$(find . -maxdepth 1 -type f -iname '*.zip' | head -n 1)
 
           if [ -z "$ZIP_FILE" ]; then
-            echo "ERROR: Android project ZIP was not found."
+            echo "ERROR: Android project ZIP not found."
             exit 1
           fi
 
-          mkdir -p extracted
-          unzip -q "$ZIP_FILE" -d extracted
+          rm -rf _project
+          mkdir _project
 
-          PROJECT_DIR=$(dirname "$(find extracted -type f -name 'settings.gradle.kts' -print -quit)")
+          unzip -q "$ZIP_FILE" -d _project
+
+          PROJECT_DIR=$(dirname "$(find _project -type f -name settings.gradle.kts -print -quit)")
 
           if [ -z "$PROJECT_DIR" ] || [ "$PROJECT_DIR" = "." ]; then
-            echo "ERROR: settings.gradle.kts was not found."
+            echo "ERROR: settings.gradle.kts not found."
             exit 1
           fi
 
-          echo "Android project found at: $PROJECT_DIR"
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
       - name: Build debug APK
         shell: bash
         run: |
           set -e
-          cd "$PROJECT_DIR"
+
+          if [ -n "${PROJECT_DIR:-}" ]; then
+            cd "$PROJECT_DIR"
+          fi
+
           gradle --no-daemon :app:assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: iPod-Phone-OS-debug-apk
-          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/app-debug.apk
+          path: |
+            **/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
